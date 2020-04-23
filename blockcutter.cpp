@@ -88,6 +88,9 @@ int jpg_writer::open_jpg(const char *out_name, bool is_color, const alto_rectang
 	cinfo.density_unit = 1;
 	jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
 	jpeg_start_compress(&cinfo, TRUE);
+	if (jpgbuf) {
+		delete [] jpgbuf;
+	}
 	jpgbuf = new JSAMPLE[cinfo.input_components * cinfo.image_width];
 	line = 0;
 	height = r.height;
@@ -114,6 +117,9 @@ int jpg_writer::open_jpg_mem(std::vector<char> *out, bool is_color, const alto_r
 	cinfo.density_unit = 1;
 	jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
 	jpeg_start_compress(&cinfo, TRUE);
+	if (jpgbuf) {
+		delete [] jpgbuf;
+	}	
 	jpgbuf = new JSAMPLE[cinfo.input_components * cinfo.image_width];
 	line = 0;
 	height = r.height;
@@ -138,6 +144,7 @@ void jpg_writer::close()
 	if (fpout) {
 		fclose(fpout);
 	}
+	fpout = 0;
 	delete [] jpgbuf;
 	jpgbuf = 0;
 }
@@ -180,7 +187,8 @@ void block_cutter::clean_up()
 		TIFFClose(m_tif);
 	}
 	m_tif = 0;
-	m_bitsperpixel = 0;	
+	m_bitsperpixel = 0;
+	to_cut.clear();
 }
 
 void  block_cutter::set_quality(int quality)
@@ -267,7 +275,11 @@ int block_cutter::open_tiff(const char *in_name)
 	// Check whether it's big or little endian
 	{
 		char tmp[4];
-		fread(tmp, 1, 4, fp);
+		if (fread(tmp, 1, 4, fp) != 4) {
+			fprintf(stderr, "ERROR block_cutter::open_tiff - could not open %s\n", in_name);
+			fclose(fp);
+			return -1;
+		}
 		if (memcmp(tmp, TIFF_MAGIC_NUMBER_LE, 4) == 0) {
 			m_little_endian = true;
 		}
@@ -704,7 +716,11 @@ int ThumbCreator::open_tiff(const char *in_name)
 	// Check whether it's big or little endian
 	{
 		char tmp[4];
-		fread(tmp, 1, 4, fp);
+		if (fread(tmp, 1, 4, fp) != 4) {
+			fprintf(stderr, "ERROR ThumbCreator::open_tiff - could not open %s\n", in_name);
+			fclose(fp);
+			return -1;
+		}
 		if (memcmp(tmp, TIFF_MAGIC_NUMBER_LE, 4) == 0) {
 			m_little_endian = true;
 		}
