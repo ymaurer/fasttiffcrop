@@ -1,0 +1,13 @@
+# exlcude sample data files
+data/
+# exclude object files
+*.[oa]
+# exclude executables
+a.out
+*.exe
+# exclude input files
+*.in
+# exclude any jpg or tif files in directory
+*.jpg
+*.tif
+*.tiff
