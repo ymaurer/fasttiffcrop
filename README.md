@@ -32,3 +32,18 @@ You need gcc, jpeg-6b headers and tiff 3.8.2 headers. An example makefile is giv
 make
 make install
 ```
+
+# How the fast cropping works
+Suppose you would like to extract the red, yellow and green rectangles of the following TIFF to separate JPEG files.
+![example image](https://user-images.githubusercontent.com/14054229/80147013-1b301e80-85b3-11ea-83e2-e2a4d419f47b.png)
+Then fasttiffcrop will do the following:
+1. Read the image header to find out width & height
+2. Skip ahead until the first rectangle to extract starts. For uncompressed TIFF files, this means no data needs to be read from disk, for compressed TIFF files, some intermediate data has to be read and discarded. This skipping is indicated by the blue arrow.
+3. Read the first scanline which contains the red and yellow rectangle. After the line from the TIFF is read, the red & yellow JPEG encoders get their pixels as needed.
+![](https://user-images.githubusercontent.com/14054229/80148066-bfff2b80-85b4-11ea-8969-4fc4b0d643f9.png)
+4. continue until the end of the yellow rectangle. At that point the JPEG for the yellow one is finished and that file can be closed. The green rectangle starts just afterwards. So open a new output JPEG for the green rectangle.
+![](https://user-images.githubusercontent.com/14054229/80148059-becdfe80-85b4-11ea-9e28-ebafb45eed8c.png)
+5. Then continue until the red rectangle is finished. Close the corresponding output JPEG file.
+![](https://user-images.githubusercontent.com/14054229/80148062-bf669500-85b4-11ea-9d20-de4e4c1fce4a.png)
+6. Finally, go until the green rectangle finished, close the green JPEG. At that point we don't need to do any more work, so close the TIFF as well.
+![](https://user-images.githubusercontent.com/14054229/80148065-bfff2b80-85b4-11ea-96a8-38f0f569e157.png)
