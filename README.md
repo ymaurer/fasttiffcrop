@@ -51,6 +51,7 @@ Then fasttiffcrop will do the following:
 There is a helper script which can be used to extract parts of newspaper images from the open data at data.bnl.lu. That data uses the METS/ALTO Format and inside the ALTO files are the coordinates of the individual Words, Textlines, blocks, ilustrations etc. on the page.
 
 *usage: gen-alto-cropping-script.sh directory [blocktype]*
+
 `directory` is a directory which contains tif and alto files
 the assumption is that the directory layout is the same as in data.bnl.lu's METS opendata that means that TIF files are in an 'images' subfolder and ALTO files are in a 'text' subfolder the filenames for tif and alto are the same, except the extensio
 
