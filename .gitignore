@@ -4,6 +4,8 @@ data/
 *.[oa]
 # exclude executables
 a.out
+fasttiffcrop
+tiff2jpg
 *.exe
 # exclude input files
 *.in

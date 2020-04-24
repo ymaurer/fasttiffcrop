@@ -30,7 +30,6 @@ color is false by default, this means that the jpeg is greyscale
 You need gcc, jpeg-6b headers and tiff 3.8.2 headers. An example makefile is given.
 ```sh
 make
-make install
 ```
 
 # How the fast cropping works
@@ -47,3 +46,23 @@ Then fasttiffcrop will do the following:
 ![](https://user-images.githubusercontent.com/14054229/80148062-bf669500-85b4-11ea-9d20-de4e4c1fce4a.png)
 6. Finally, go until the green rectangle finished, close the green JPEG. At that point we don't need to do any more work, so close the TIFF as well.
 ![](https://user-images.githubusercontent.com/14054229/80148065-bfff2b80-85b4-11ea-96a8-38f0f569e157.png)
+
+# Helper script
+There is a helper script which can be used to extract parts of newspaper images from the open data at data.bnl.lu. That data uses the METS/ALTO Format and inside the ALTO files are the coordinates of the individual Words, Textlines, blocks, ilustrations etc. on the page.
+
+*usage: gen-alto-cropping-script.sh directory [blocktype]*
+`directory` is a directory which contains tif and alto files
+the assumption is that the directory layout is the same as in data.bnl.lu's METS opendata that means that TIF files are in an 'images' subfolder and ALTO files are in a 'text' subfolder the filenames for tif and alto are the same, except the extensio
+
+`blocktype` is the type of block that should be extracted. For ALTO, valid types are:
+  - <TextBlock
+  - <ComposedBlock
+  - <String
+  - <Textline
+  - <Illustration
+they can be combined with a pipe
+default is <TextBlock|<Illustration
+
+# Performance
+
+- Extracting all TextBlocks from https://data.bnl.lu/open-data/digitization/newspapers/set03-1month.zip results in 6444 JPEG files. This is done in 39.142s on a i5 4670 with a Corsair M2 SSD. A total of 2571MB of TIFF files has to be considered and 467MB of JPG files are created.
