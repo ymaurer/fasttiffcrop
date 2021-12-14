@@ -2,6 +2,7 @@
 #define BLOCKCUTTER_H_
 
 #include <cstring>
+#include <string>
 #include <set>
 #include <map>
 #include <vector>

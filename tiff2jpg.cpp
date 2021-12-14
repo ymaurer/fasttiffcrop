@@ -1,6 +1,7 @@
 #include "blockcutter.h"
 #include <iostream>
 #include <string>
+#include <cstdlib>
 
 void print_help()
 {
