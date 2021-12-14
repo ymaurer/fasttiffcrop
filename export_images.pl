@@ -5,13 +5,14 @@ use Data::Dumper;
 use POSIX;
 use IPC::Open3;
 
-my ($id, $pid, $numpages, $label, $date);
+my ($id, $pid, , $ark, $metsType, $numpages, $label, $date, $directory);
 my %gid2img = ();
 my %gid2alto = ();
 my %alto2gid = ();
 my %alto2page = ();
 my $currgroup;
 my $debug = 0;
+my $useWindowsBackslash = 0;
 my @coordinateKeys = ('width', 'height', 'hpos', 'vpos', 'pageHeight', 'pageWidth');
 
 if (scalar(@ARGV) == 0) {
@@ -24,8 +25,19 @@ open(FIL, $ARGV[0]) || die "cannot open $ARGV[0] for reading\n";
 if ($ARGV[0] =~ /([0-9]+)\.xml/) {
 	$pid = $1;
 } else {
-	$pid = '0';
+	$pid = '';
 }
+$directory = "";
+if ($useWindowsBackslash) {
+	if ($ARGV[0] =~ /^(.*\\)[^\\]*$/) {
+		$directory = $1;
+	}
+} else {
+	if ($ARGV[0] =~ /^(.*\/)[^\/]*$/) {
+		$directory = $1;
+	}
+}
+
 my $stage = 0;
 my $imgdivOpen = 0;
 my @labels;
@@ -38,6 +50,15 @@ while (<FIL>) {
 	}
 	if (/<mets .*LABEL=\"([^"]*)\"/) {
 		$label = $1;
+	}
+	if (/<mets .*OBJID="https:\/\/persist.lu\/(ark:\/70795\/)([^\"]*)\"/) {
+		$ark = $1.$2;
+		if (length($pid) < 1) {
+			$pid = $2;
+		}
+	}
+	if (/<mets .*TYPE="([^\"]*)\"/) {
+		$metsType = $1;
 	}
 	if (/<mods:dateIssued[^>]*>([^<]*)/) {
 		$date = $1;
@@ -155,7 +176,7 @@ for (my $i = 0; $i < scalar(@illustrations); ++$i) {
 	for (my $k = 0; $k < scalar(@{$illustrations[$i]->{'img'}}); $k++) {
 		foreach my $a (keys %{$illustrations[$i]->{'img'}->[$k]}) {
 			foreach my $b (keys %{$illustrations[$i]->{'img'}->[$k]->{$a}}) {
-				push @ill, { 'caption' => $illustrations[$i]->{'caption'}, 'author' => $illustrations[$i]->{'author'}, 'altoid' => $a, 'blockid' => $b , 'metsDivType' => $illustrations[$i]->{'metsDivType'} , 'page' => $alto2page{$a} }
+				push @ill, { 'caption' => $illustrations[$i]->{'caption'}, 'altoid' => $a, 'blockid' => $b , 'metsDivType' => $illustrations[$i]->{'metsDivType'} , 'page' => $alto2page{$a} }
 			}
 		}
 	}
@@ -186,8 +207,8 @@ for (my $i = 0; $i < scalar(@ill); ++$i) {
 my $cropcmd = "";
 
 foreach my $k (keys %alto2extraction) {
-	my $res = &readAlto($k, $alto2extraction{$k});
-	$cropcmd = $cropcmd."source: ".$gid2img{$alto2gid{$k}}."\n";
+	my $res = &readAlto($directory, $k, $alto2extraction{$k});
+	$cropcmd = $cropcmd."source: ".$directory.$gid2img{$alto2gid{$k}}."\n";
 	for (my $i = 0; $i < scalar(@{$res}); $i++) {
 		my $currIll = $res->[$i]->{'ILLUSTRATION_ID'};
 		foreach my $blk (keys %{$res->[$i]}) {
@@ -217,6 +238,8 @@ for (my $i = 0; $i < scalar(@ill); ++$i) {
 	$ill[$i]->{'metsDate'} = $date;
 	$ill[$i]->{'metsNumPages'} = $numpages;
 	$ill[$i]->{'metsLabel'} = $label;
+	$ill[$i]->{'metsType'} = $metsType;
+	$ill[$i]->{'ark'} = $ark;
 }
 
 if ($debug > 1) {
@@ -250,12 +273,13 @@ for (my $i = 0; $i < scalar(@ill); ++$i) {
 }
 
 # extract the images
-my $cmdf = $outputdir."cmd";
-open(FCMD, ">$cmdf") || die "cannot open command file\n";
-print FCMD $cropcmd;
-close(FCMD);
-`fasttiffcrop < $cmdf`;
-`rm $cmdf`;
+print $cropcmd;
+# my $cmdf = $outputdir."cmd";
+# open(FCMD, ">$cmdf") || die "cannot open command file\n";
+# print FCMD $cropcmd;
+# close(FCMD);
+# `fasttiffcrop < $cmdf`;
+# `rm $cmdf`;
 
 sub extractDiv()
 {
@@ -275,12 +299,12 @@ sub extractDiv()
 
 sub readAlto()
 {
-	my ($fileid, $blks) = @_;
+	my ($directory, $fileid, $blks) = @_;
 	shift;
 	if (!defined $alto2gid{$fileid}) {
 		die "ERROR - $pid - no alto file corresponding to $fileid\n";
 	}
-	my $fname = $gid2alto{$alto2gid{$fileid}};
+	my $fname = $directory.$gid2alto{$alto2gid{$fileid}};
 
 	my @coordinates;
 	my $p;
